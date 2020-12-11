@@ -1,0 +1,210 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Prob37</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-10-21"><meta name="DC.source" content="Prob37.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Prob - 7</a></li><li><a href="#2">Threshold</a></li><li><a href="#3">Power of test</a></li><li><a href="#4">beta|H0 and beta|H1 PDFs</a></li></ul></div><h2 id="1">Prob - 7</h2><pre class="codeinput">clc; clear; close <span class="string">all</span>;
+
+P  = [1 0.5;0.5 2];
+alpha  = 0.01;
+</pre><h2 id="2">Threshold</h2><pre class="codeinput">mu_beta_z = @(theta_1) sum(sum(inv(P)))*theta_1;
+Var_beta_z = sum(sum(inv(P)));
+
+beta_0  = -norminv(alpha/2,mu_beta_z(0),sqrt(Var_beta_z));
+
+disp(<span class="string">'Threshold \beta_0:'</span>)
+disp(beta_0)
+</pre><pre class="codeoutput">Threshold \beta_0:
+    2.7537
+
+</pre><h2 id="3">Power of test</h2><pre class="codeinput">theta_1_vec = -10:0.01:10;
+
+mu_beta_z_vec = mu_beta_z(theta_1_vec);
+
+power_vec = zeros(1,length(theta_1_vec));
+
+<span class="keyword">for</span> nn = 1:length(theta_1_vec)
+    power_vec(nn)  = normcdf(-beta_0,mu_beta_z_vec(nn),sqrt(Var_beta_z));
+    power_vec(nn)  = power_vec(nn) + 1-normcdf(beta_0,mu_beta_z_vec(nn),sqrt(Var_beta_z));
+<span class="keyword">end</span>
+
+figure;
+plot(theta_1_vec,power_vec,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'Linewidth'</span>,1.5)
+xlabel(<span class="string">'Hypothesis 1, \theta_1'</span>);
+ylabel(<span class="string">'Power(\theta_1)'</span>);
+title(<span class="string">'Power of the Test'</span>)
+        grid <span class="string">on</span>
+    ax = gca;
+    ax.LineWidth = 1;
+    ax.GridColor = [0 0 0];
+    ax.MinorGridColor = <span class="string">'k'</span>;
+</pre><img vspace="5" hspace="5" src="Prob37_01.png" style="width:560px;height:420px;" alt=""> <h2 id="4">beta|H0 and beta|H1 PDFs</h2><pre class="codeinput">six_sigma = 6*sqrt(Var_beta_z);
+
+del_beta_z_vec = linspace(-six_sigma,six_sigma,2000);
+
+theta_1 = 4;
+x_H0_vec = del_beta_z_vec;
+x_H1_vec = del_beta_z_vec+theta_1;
+
+pdf_beta_z_H0 = normpdf(x_H0_vec,mu_beta_z(0),sqrt(Var_beta_z));
+pdf_beta_z_H1 = normpdf(x_H1_vec,mu_beta_z(theta_1),sqrt(Var_beta_z));
+pdf_beta_0 = normpdf([-beta_0 beta_0],mu_beta_z(0),sqrt(Var_beta_z));
+
+figure;
+plot(x_H0_vec,pdf_beta_z_H0,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'Linewidth'</span>,1.5);hold <span class="string">on</span>;
+plot(x_H1_vec,pdf_beta_z_H1,<span class="string">'--'</span>,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'Linewidth'</span>,1.5);
+plot([-beta_0 beta_0],pdf_beta_0,<span class="string">'s'</span>,<span class="string">'MarkerSize'</span>,7,<span class="keyword">...</span>
+    <span class="string">'MarkerEdgeColor'</span>,<span class="string">'k'</span>,<span class="keyword">...</span>
+    <span class="string">'MarkerFaceColor'</span>,[0.4,0.4,0.4])
+xlabel(<span class="string">'\beta(z)'</span>);
+ylabel(<span class="string">'PDF, P(\beta(z)|H0) and P(\beta(z)|H1)'</span>);
+title(<span class="string">'PDFs of the Test Statistic Under H0 and H1'</span>)
+legend(<span class="string">'Under H0'</span>,<span class="string">'Under H1'</span>,<span class="string">'Threshold, \beta_0'</span>)
+    grid <span class="string">on</span>
+    ax = gca;
+    ax.LineWidth = 1;
+    ax.GridColor = [0 0 0];
+    ax.MinorGridColor = <span class="string">'k'</span>;
+<span class="comment">% axis tight</span>
+</pre><img vspace="5" hspace="5" src="Prob37_02.png" style="width:560px;height:420px;" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Prob - 7
+
+clc; clear; close all;
+
+P  = [1 0.5;0.5 2];
+alpha  = 0.01;
+
+%% Threshold
+
+mu_beta_z = @(theta_1) sum(sum(inv(P)))*theta_1;
+Var_beta_z = sum(sum(inv(P)));
+
+beta_0  = -norminv(alpha/2,mu_beta_z(0),sqrt(Var_beta_z));
+
+disp('Threshold \beta_0:')
+disp(beta_0)
+
+%% Power of test
+
+theta_1_vec = -10:0.01:10;
+
+mu_beta_z_vec = mu_beta_z(theta_1_vec);
+
+power_vec = zeros(1,length(theta_1_vec));
+
+for nn = 1:length(theta_1_vec)
+    power_vec(nn)  = normcdf(-beta_0,mu_beta_z_vec(nn),sqrt(Var_beta_z));
+    power_vec(nn)  = power_vec(nn) + 1-normcdf(beta_0,mu_beta_z_vec(nn),sqrt(Var_beta_z));
+end
+
+figure;
+plot(theta_1_vec,power_vec,'Color','k','Linewidth',1.5)
+xlabel('Hypothesis 1, \theta_1');
+ylabel('Power(\theta_1)');
+title('Power of the Test')
+        grid on
+    ax = gca;
+    ax.LineWidth = 1;
+    ax.GridColor = [0 0 0];
+    ax.MinorGridColor = 'k';
+    
+    
+%% beta|H0 and beta|H1 PDFs
+
+six_sigma = 6*sqrt(Var_beta_z);
+
+del_beta_z_vec = linspace(-six_sigma,six_sigma,2000);
+
+theta_1 = 4;
+x_H0_vec = del_beta_z_vec;
+x_H1_vec = del_beta_z_vec+theta_1;
+
+pdf_beta_z_H0 = normpdf(x_H0_vec,mu_beta_z(0),sqrt(Var_beta_z));
+pdf_beta_z_H1 = normpdf(x_H1_vec,mu_beta_z(theta_1),sqrt(Var_beta_z));
+pdf_beta_0 = normpdf([-beta_0 beta_0],mu_beta_z(0),sqrt(Var_beta_z));
+
+figure;
+plot(x_H0_vec,pdf_beta_z_H0,'Color','k','Linewidth',1.5);hold on;
+plot(x_H1_vec,pdf_beta_z_H1,'REPLACE_WITH_DASH_DASH','Color','k','Linewidth',1.5);
+plot([-beta_0 beta_0],pdf_beta_0,'s','MarkerSize',7,...
+    'MarkerEdgeColor','k',...
+    'MarkerFaceColor',[0.4,0.4,0.4])
+xlabel('\beta(z)');
+ylabel('PDF, P(\beta(z)|H0) and P(\beta(z)|H1)');
+title('PDFs of the Test Statistic Under H0 and H1')
+legend('Under H0','Under H1','Threshold, \beta_0')
+    grid on
+    ax = gca;
+    ax.LineWidth = 1;
+    ax.GridColor = [0 0 0];
+    ax.MinorGridColor = 'k';
+% axis tight
+    
+
+
+##### SOURCE END #####
+--></body></html>

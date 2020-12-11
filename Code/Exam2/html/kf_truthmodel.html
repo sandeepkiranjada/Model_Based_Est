@@ -1,0 +1,272 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>kf_truthmodel</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-11-19"><meta name="DC.source" content="kf_truthmodel.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="keyword">function</span> [xtruehist,zhist] = kf_truthmodel(F,Gamma,H,Q,R,xhat0,<span class="keyword">...</span>
+                                           P0,kmax)
+<span class="comment">%</span>
+<span class="comment">%  Copyright (c) 2002 Mark L. Psiaki.  All rights reserved.</span>
+<span class="comment">%</span>
+<span class="comment">%  This function performs a truth-model Monte-Carlo simulation for</span>
+<span class="comment">%  the discrete-time stochastic system model:</span>
+<span class="comment">%</span>
+<span class="comment">%     x(k+1) = F*x(k) + Gamma*v(k)</span>
+<span class="comment">%     z(k)   = H*x(k) + w(k)</span>
+<span class="comment">%</span>
+<span class="comment">%  Where v(k) and w(k) are uncorrelated, zero-mean, white-noise</span>
+<span class="comment">%  Gaussian random processes with covariances E[v(k)*v(k)'] = Q and</span>
+<span class="comment">%  E[w(k)*w(k)'] = R.  The simulation starts from a true x(0)</span>
+<span class="comment">%  that is drawn from the Gaussian distribution with mean xhat0</span>
+<span class="comment">%  and covariance P0.  The simulation starts at time k = 0 and</span>
+<span class="comment">%  lasts until time k = kmax.</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">%  Inputs:</span>
+<span class="comment">%</span>
+<span class="comment">%    F          The (nx)x(nx) state transition matrix for the time-</span>
+<span class="comment">%               invariant linear system.</span>
+<span class="comment">%</span>
+<span class="comment">%    Gamma      The (nx)x(nv) process noise gain matrix for the time-</span>
+<span class="comment">%               invariant linear system.</span>
+<span class="comment">%</span>
+<span class="comment">%    H          The (nz)x(nx) output gain matrix for the time-</span>
+<span class="comment">%               invariant linear system.</span>
+<span class="comment">%</span>
+<span class="comment">%    Q          The (nv)x(nv) symmetric positive definite process noise</span>
+<span class="comment">%               covariance matrix.</span>
+<span class="comment">%</span>
+<span class="comment">%    R          The (nz)x(nz) symmetric positive definite measurement</span>
+<span class="comment">%               noise covariance matrix.</span>
+<span class="comment">%</span>
+<span class="comment">%    xhat0      The (nx)x1 initial state estimate.</span>
+<span class="comment">%</span>
+<span class="comment">%    P0         The (nx)x(nx) symmetric positive definite initial state</span>
+<span class="comment">%               estimation error covariance matrix.</span>
+<span class="comment">%</span>
+<span class="comment">%    kmax       The maximum discrete-time index of the simulation.</span>
+<span class="comment">%</span>
+<span class="comment">%  Outputs:</span>
+<span class="comment">%</span>
+<span class="comment">%    xtruehist  = [x(0)';x(1)';x(2)';...;x(kmax)'], the (kmax+1)x(nx)</span>
+<span class="comment">%               array that stores the truth time history for the state</span>
+<span class="comment">%               vector.  Note that Matlab does not allow zero indices</span>
+<span class="comment">%               in its arrays.  Thus, x(0) = xtruehist(1,:)',</span>
+<span class="comment">%               x(1) = xtruehist(2,:)', etc.</span>
+<span class="comment">%</span>
+<span class="comment">%    zhist      = [z(1)';z(2)';z(3)';...;z(kmax)'], the (kmax)x(nz)</span>
+<span class="comment">%               array that stores the measurement time history.</span>
+<span class="comment">%               z(1) = zhist(1,:)', z(2) = zhist(2,:)', etc.  Note</span>
+<span class="comment">%               that the state vector xtruehist(j+1,:)' and</span>
+<span class="comment">%               the measurement vector zhist(j,:)' correspond</span>
+<span class="comment">%               to the same time.</span>
+<span class="comment">%</span>
+
+<span class="comment">%</span>
+<span class="comment">%  Get problem dimensions and set up the output arrays.</span>
+<span class="comment">%</span>
+   [nx,nv] = size(Gamma);
+   nz = size(H,1);
+   xtruehist = zeros((kmax+1),nx);
+   zhist = zeros(kmax,nz);
+<span class="comment">%</span>
+<span class="comment">%  Calculate the appropriate matrix square root of P0 for use in</span>
+<span class="comment">%  randomly generating an initial state.</span>
+<span class="comment">%</span>
+   P0_root = chol(P0)';
+<span class="comment">%</span>
+<span class="comment">%  Generate the initial truth state with the aid of a random number</span>
+<span class="comment">%  generator and store it.</span>
+<span class="comment">%</span>
+   x0 = xhat0+P0_root*randn(nx,1);
+   xtruehist(1,:) = x0';
+<span class="comment">%</span>
+<span class="comment">%  Calculate the appropriate matrix square roots of Q and R for use in</span>
+<span class="comment">%  randomly generating the process and measurement noise vectors.</span>
+<span class="comment">%</span>
+   Q_root = chol(Q)';
+   R_root = chol(R)';
+<span class="comment">%</span>
+<span class="comment">%  Iterate through the kmax samples, propagating the state with</span>
+<span class="comment">%  randomly generated process noise of the correct covariance and</span>
+<span class="comment">%  corrupting the measurements with randomly generated measurement</span>
+<span class="comment">%  noise of the correct covariance.</span>
+<span class="comment">%</span>
+   xk = x0;
+   <span class="keyword">for</span> k = 1:kmax
+      xkm1 = xk;
+      vkm1 = Q_root*randn(nv,1);
+      xk = F*xkm1 + Gamma*vkm1;
+      wk = R_root*randn(nz,1);
+      zk = H*xk + wk;
+      kp1 = k + 1;
+      xtruehist(kp1,:) = xk';
+      zhist(k,:) = zk';
+   <span class="keyword">end</span>
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [xtruehist,zhist] = kf_truthmodel(F,Gamma,H,Q,R,xhat0,...
+                                           P0,kmax)
+%
+%  Copyright (c) 2002 Mark L. Psiaki.  All rights reserved.  
+% 
+%  This function performs a truth-model Monte-Carlo simulation for
+%  the discrete-time stochastic system model:
+%
+%     x(k+1) = F*x(k) + Gamma*v(k)
+%     z(k)   = H*x(k) + w(k)
+%
+%  Where v(k) and w(k) are uncorrelated, zero-mean, white-noise
+%  Gaussian random processes with covariances E[v(k)*v(k)'] = Q and
+%  E[w(k)*w(k)'] = R.  The simulation starts from a true x(0)
+%  that is drawn from the Gaussian distribution with mean xhat0
+%  and covariance P0.  The simulation starts at time k = 0 and
+%  lasts until time k = kmax.
+%  
+%
+%  Inputs:
+%
+%    F          The (nx)x(nx) state transition matrix for the time-
+%               invariant linear system.
+%
+%    Gamma      The (nx)x(nv) process noise gain matrix for the time-
+%               invariant linear system.
+%
+%    H          The (nz)x(nx) output gain matrix for the time-
+%               invariant linear system.
+%
+%    Q          The (nv)x(nv) symmetric positive definite process noise 
+%               covariance matrix.
+%
+%    R          The (nz)x(nz) symmetric positive definite measurement 
+%               noise covariance matrix.
+%
+%    xhat0      The (nx)x1 initial state estimate.
+%
+%    P0         The (nx)x(nx) symmetric positive definite initial state
+%               estimation error covariance matrix.
+%
+%    kmax       The maximum discrete-time index of the simulation.
+%
+%  Outputs:
+%
+%    xtruehist  = [x(0)';x(1)';x(2)';...;x(kmax)'], the (kmax+1)x(nx) 
+%               array that stores the truth time history for the state 
+%               vector.  Note that Matlab does not allow zero indices
+%               in its arrays.  Thus, x(0) = xtruehist(1,:)',
+%               x(1) = xtruehist(2,:)', etc.
+%
+%    zhist      = [z(1)';z(2)';z(3)';...;z(kmax)'], the (kmax)x(nz)
+%               array that stores the measurement time history.
+%               z(1) = zhist(1,:)', z(2) = zhist(2,:)', etc.  Note
+%               that the state vector xtruehist(j+1,:)' and 
+%               the measurement vector zhist(j,:)' correspond
+%               to the same time.
+%
+
+%
+%  Get problem dimensions and set up the output arrays.
+%
+   [nx,nv] = size(Gamma);
+   nz = size(H,1);
+   xtruehist = zeros((kmax+1),nx);
+   zhist = zeros(kmax,nz);
+%
+%  Calculate the appropriate matrix square root of P0 for use in
+%  randomly generating an initial state.
+%
+   P0_root = chol(P0)';
+%
+%  Generate the initial truth state with the aid of a random number 
+%  generator and store it.
+%
+   x0 = xhat0+P0_root*randn(nx,1);
+   xtruehist(1,:) = x0';
+%
+%  Calculate the appropriate matrix square roots of Q and R for use in
+%  randomly generating the process and measurement noise vectors.
+%
+   Q_root = chol(Q)';
+   R_root = chol(R)';
+%
+%  Iterate through the kmax samples, propagating the state with
+%  randomly generated process noise of the correct covariance and
+%  corrupting the measurements with randomly generated measurement
+%  noise of the correct covariance.
+%
+   xk = x0;
+   for k = 1:kmax
+      xkm1 = xk;
+      vkm1 = Q_root*randn(nv,1);
+      xk = F*xkm1 + Gamma*vkm1;
+      wk = R_root*randn(nz,1);
+      zk = H*xk + wk;
+      kp1 = k + 1;
+      xtruehist(kp1,:) = xk';
+      zhist(k,:) = zk';
+   end
+##### SOURCE END #####
+--></body></html>
