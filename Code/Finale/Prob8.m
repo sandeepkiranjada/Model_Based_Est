@@ -5,8 +5,12 @@ format longg
 
 cart_EKF_meas
 
+nx = 5;
+nv = 2;
+nz = 2;
+
 NRK = 120;
-idervflag = 1;
+idervflag = 0;
 
 N = length(thist);
 
@@ -64,27 +68,81 @@ R = diag([sig_rhoa^2 sig_rhoa^2]);
 
 eps_nu = zeros(1,N-1);
 
+%% UKF Params
+
+alpha  = 0.05;
+beta = 2;
+kappa  = 3-nx-nv; 
+
+lambda = alpha^2 * (nx+nv+kappa) - (nx+nv);
+c1 = nx+nv+lambda;
+
+S_v = chol(Q)';
+
+
+Wm = ones(1,1+2*(nx+nv))/c1/2;
+Wm(1) = Wm(1)*2*lambda;
+
+Wc = ones(1,1+2*(nx+nv))/c1/2;
+Wc(1) = Wc(1)*2*lambda + 1 - alpha^2 + beta;
+
+%% The Propagation
+
+
 
 for k = 1:N-1
-
-    [x_bar_kp1,Fk,Gammak] = ...
-                 c2dnonlinear(x_hat(:,k),0,[0;0],thist(k),thist(k+1),NRK,...
+    k
+    S_x = chol(P(:,:,k))';
+    x_math_plus = x_hat(:,k)*ones(1,nx) + sqrt(c1)*S_x;
+    x_math_minus = x_hat(:,k)*ones(1,nx) - sqrt(c1)*S_x;
+    v_math_plus = sqrt(c1)*S_v;
+    v_math_minus = -sqrt(c1)*S_v;
+    
+    x_math_k = [x_hat(:,k), x_math_plus, x_math_minus, x_hat(:,k)*ones(1,nv), x_hat(:,k)*ones(1,nv) ];
+    v_math_k = [zeros(nv,2*nx+1), v_math_plus, v_math_minus ];
+    
+    x_math_bar_kp1 = zeros(nx,1+2*(nx+nv));
+    z_math_bar_kp1 = zeros(nz,1+2*(nx+nv));
+    
+    x_bar_kp1 = 0;
+    z_bar_kp1 = 0;
+    
+    for ii = 1:1+2*(nx+nv)
+        [x_math_bar_kp1(:,ii),~,~] = ...
+                 c2dnonlinear(x_math_k(:,ii),0,v_math_k(:,ii),thist(k),thist(k+1),NRK,...
                  'fscript_cart',idervflag);
              
-    P_bar_kp1 = Fk*P(:,:,k)*Fk' + Gammak*Q*Gammak';
-    
-    [z_bar_kp1,H_kp1] = h_cart(x_bar_kp1,idervflag);
+        [z_math_bar_kp1(:,ii),~] = h_cart(x_math_bar_kp1(:,ii),idervflag);
+        
+        x_bar_kp1 = x_bar_kp1+Wm(ii)*x_math_bar_kp1(:,ii);
+        z_bar_kp1 = z_bar_kp1+Wm(ii)*z_math_bar_kp1(:,ii);
+        
+    end
     
     nu_kp1 = zhist(k+1,:)' - z_bar_kp1;
     
-    S_kp1 = H_kp1*P_bar_kp1*H_kp1' + R;
-    W_kp1 = P_bar_kp1*H_kp1'/S_kp1;
+
     
-    x_hat(:,k+1) = x_bar_kp1 + W_kp1*nu_kp1;
+    P_bar_kp1 = zeros(nx,nx);
+    Pxz_bar_kp1 = zeros(nx,nz);
+    Pzz_bar_kp1 = R;
     
-    P(:,:,k+1) = P_bar_kp1 - W_kp1*S_kp1*W_kp1';
+    for ii = 1:1+2*(nx+nv)
+        
+        del_x_math_kp1 = x_math_bar_kp1(:,ii)-x_bar_kp1;
+        del_z_math_kp1 = z_math_bar_kp1(:,ii)-z_bar_kp1;
+        
+        P_bar_kp1 = P_bar_kp1+Wc(ii)*(del_x_math_kp1*del_x_math_kp1');
+        Pxz_bar_kp1 = Pxz_bar_kp1+Wc(ii)*(del_x_math_kp1*del_z_math_kp1');
+        Pzz_bar_kp1 = Pzz_bar_kp1+Wc(ii)*(del_z_math_kp1*del_z_math_kp1') ;
+        
+    end
+
+    x_hat(:,k+1) = x_bar_kp1 + Pxz_bar_kp1/Pzz_bar_kp1*nu_kp1;
     
-    eps_nu(k) = nu_kp1'/S_kp1*nu_kp1;
+    P(:,:,k+1) = P_bar_kp1 - Pxz_bar_kp1/Pzz_bar_kp1*Pxz_bar_kp1';
+
+    eps_nu(k) = nu_kp1'/Pzz_bar_kp1*nu_kp1;
     
 end
 

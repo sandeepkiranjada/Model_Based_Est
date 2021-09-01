@@ -1,5 +1,6 @@
+%% Assignment 7, Problem 1
 clc;clear;close all;
-format longg
+format long
 
 %% Inital State and Proc Noise, Etc..
 
@@ -7,8 +8,8 @@ N1 = 60;
 N2 = 120;
 t0 = 0;
 tf = 3;
-x0 = randn(4,1);
-v0 = randn(3,1);
+x0 = [-0.40; 0.85; -0.60; -1.65];
+v0 =[-0.77; 1.30; 1.65];
 idervflag = 1;
 
 %% RK4 Calls
@@ -17,6 +18,7 @@ idervflag = 1;
              c2dnonlinear(x0,0,v0,t0,tf,N1,'fscript_ts01',idervflag);
 [xf2,dfprinted_dxk2,dfprinted_dvk2] = ...
              c2dnonlinear(x0,0,v0,t0,tf,N2,'fscript_ts01',idervflag);
+
 
 %% Truth Model
          
@@ -42,23 +44,25 @@ xft = dfprinted_dxk_t*x0 + dfprinted_dvk_t*v0;
 
 %% Results
 
-disp('Error in fprinted, NRK = 60');
-disp(norm(xft-xf1))
+disp('Error in fprinted (Truth-RK4), NRK = 60');
+disp((xft-xf1))
 
-disp('Error in fprinted, NRK = 120');
-disp(norm(xft-xf2))
+disp('Error in dfprinted_dxk (Truth-RK4), NRK = 60');
+disp((dfprinted_dxk_t-dfprinted_dxk1))
 
-disp('Error in dfprinted_dxk, NRK = 60');
-disp(norm(dfprinted_dxk_t-dfprinted_dxk1))
+disp('Error in dfprinted_dvk (Truth-RK4), NRK = 60');
+disp((dfprinted_dvk_t-dfprinted_dvk1))
 
-disp('Error in dfprinted_dxk, NRK = 120');
-disp(norm(dfprinted_dxk_t-dfprinted_dxk2))
 
-disp('Error in dfprinted_dvk, NRK = 60');
-disp(norm(dfprinted_dvk_t-dfprinted_dvk1))
+disp('Error in fprinted (Truth-RK4), NRK = 120');
+disp((xft-xf2))
 
-disp('Error in dfprinted_dvk, NRK = 120');
-disp(norm(dfprinted_dvk_t-dfprinted_dvk2))
+disp('Error in dfprinted_dxk (Truth-RK4), NRK = 120');
+disp((dfprinted_dxk_t-dfprinted_dxk2))
+
+disp('Error in dfprinted_dvk (Truth-RK4), NRK = 120');
+disp((dfprinted_dvk_t-dfprinted_dvk2))
+
 
 
 

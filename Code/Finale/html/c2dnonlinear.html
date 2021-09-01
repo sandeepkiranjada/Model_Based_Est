@@ -1,0 +1,432 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>c2dnonlinear</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-12-15"><meta name="DC.source" content="c2dnonlinear.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="keyword">function</span> [fprinted,dfprinted_dxk,dfprinted_dvk] = <span class="keyword">...</span>
+             c2dnonlinear(xk,uk,vk,tk,tkp1,nRK,fscriptname,idervflag)
+<span class="comment">%</span>
+<span class="comment">%  Copyright (c) 2002 Mark L. Psiaki.  All rights reserved.</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">%  This function derives a nonlinear discrete-time dynamics function</span>
+<span class="comment">%  for use in a nonlinear difference equation via 4th-order</span>
+<span class="comment">%  Runge-Kutta numerical integration of a nonlinear differential</span>
+<span class="comment">%  equation.  If the nonlinear differential equation takes the</span>
+<span class="comment">%  form:</span>
+<span class="comment">%</span>
+<span class="comment">%               xdot = fscript{t,x(t),uk,vk}</span>
+<span class="comment">%</span>
+<span class="comment">%  and if the initial condition is x(tk) = xk, then the solution</span>
+<span class="comment">%  gets integrated forward from time tk to time tkp1 using nRK</span>
+<span class="comment">%  4th-order Runge-Kutta numerical integration steps in order to</span>
+<span class="comment">%  compute fprinted(k,xk,uk,vk) = x(tkp1).  This function can</span>
+<span class="comment">%  be used in a nonlinear dynamics model of the form:</span>
+<span class="comment">%</span>
+<span class="comment">%        xkp1 = fprinted(k,xk,uk,vk)</span>
+<span class="comment">%</span>
+<span class="comment">%  which is the form defined in MAE 676 lecture for use in a nonlinear</span>
+<span class="comment">%  extended Kalman filter.</span>
+<span class="comment">%</span>
+<span class="comment">%  This function also computes the first partial derivative of</span>
+<span class="comment">%  fprinted(k,xk,uk,vk) with respect to xk, dfprinted_dxk, and with</span>
+<span class="comment">%  respect to vk, dfprinted_dvk.</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">%  Inputs:</span>
+<span class="comment">%</span>
+<span class="comment">%    xk             The state vector at time tk, which is the initial</span>
+<span class="comment">%                   time of the sample interval.</span>
+<span class="comment">%</span>
+<span class="comment">%    uk             The control vector, which is held constant</span>
+<span class="comment">%                   during the sample interval from time tk to time</span>
+<span class="comment">%                   tkp1.</span>
+<span class="comment">%</span>
+<span class="comment">%    vk             The discrete-time process noise disturbance vector,</span>
+<span class="comment">%                   which is held constant during the sample interval</span>
+<span class="comment">%                   from time tk to time tkp1.</span>
+<span class="comment">%</span>
+<span class="comment">%    tk             The start time of the numerical integration</span>
+<span class="comment">%                   sample interval.</span>
+<span class="comment">%</span>
+<span class="comment">%    tkp1           The end time of the numerical integration</span>
+<span class="comment">%                   sample interval.</span>
+<span class="comment">%</span>
+<span class="comment">%    nRK            The number of Runge-Kutta numerical integration</span>
+<span class="comment">%                   steps to take during the sample interval.</span>
+<span class="comment">%</span>
+<span class="comment">%    fscriptname    The name of the Matlab .m-file that contains the</span>
+<span class="comment">%                   function which defines fscript{t,x(t),uk,vk}.</span>
+<span class="comment">%                   This must be a character string.  For example, if</span>
+<span class="comment">%                   the continuous-time differential equation model is</span>
+<span class="comment">%                   contained in the file rocketmodel.m with the function</span>
+<span class="comment">%                   name rocketmodel, then on input to the present</span>
+<span class="comment">%                   function fscriptname must equal 'rocketmodel',</span>
+<span class="comment">%                   and the first line of the file rocketmodel.m</span>
+<span class="comment">%                   must be:</span>
+<span class="comment">%</span>
+<span class="comment">%                   function [fscript,dfscript_dx,dfscript_dvtil] = ...</span>
+<span class="comment">%                               rocketmodel(t,x,u,vtil,idervflag)</span>
+<span class="comment">%</span>
+<span class="comment">%                   The function must be written so that fscript</span>
+<span class="comment">%                   defines xdot as a function of t, x, u, and vtil</span>
+<span class="comment">%                   and so that dfscript_dx and dfscript_dvtil are the</span>
+<span class="comment">%                   matrix partial derivatives of fscript with respect</span>
+<span class="comment">%                   to x and vtil if idervflag = 1.  If idervflag = 0, then</span>
+<span class="comment">%                   these outputs must be empty arrays.</span>
+<span class="comment">%</span>
+<span class="comment">%    idervflag      A flag that tells whether (idervflag = 1) or not</span>
+<span class="comment">%                   (idervflag = 0) the partial derivatives</span>
+<span class="comment">%                   dfprinted_dxk and dfprinted_dvk must be calculated.</span>
+<span class="comment">%                   If idervflag = 0, then these outputs will be</span>
+<span class="comment">%                   empty arrays.</span>
+<span class="comment">%</span>
+<span class="comment">%  Outputs:</span>
+<span class="comment">%</span>
+<span class="comment">%    fprinted       The discrete-time dynamics vector function evaluated</span>
+<span class="comment">%                   at k, xk, uk, and vk.</span>
+<span class="comment">%</span>
+<span class="comment">%    dfprinted_dxk  The partial derivative of fprinted with respect to</span>
+<span class="comment">%                   xk.  This is a Jacobian matrix.  It is evaluated and</span>
+<span class="comment">%                   output only if idervflag = 1.  Otherwise, an</span>
+<span class="comment">%                   empty array is output.</span>
+<span class="comment">%</span>
+<span class="comment">%    dfprinted_dvk  The partial derivative of fprinted with respect to</span>
+<span class="comment">%                   vk.  This is a Jacobian matrix.  It is evaluated and</span>
+<span class="comment">%                   output only if idervflag = 1.  Otherwise, an</span>
+<span class="comment">%                   empty array is output.</span>
+<span class="comment">%</span>
+
+<span class="comment">%</span>
+<span class="comment">%  Prepare for the Runge-Kutta numerical integration by setting up</span>
+<span class="comment">%  the initial conditions and the time step.</span>
+<span class="comment">%</span>
+   x = xk;
+   <span class="keyword">if</span> idervflag == 1
+      nx = size(xk,1);
+      nv = size(vk,1);
+      F = eye(nx);
+      Gamma = zeros(nx,nv);
+   <span class="keyword">end</span>
+   t = tk;
+   delt = (tkp1 - tk)/nRK;
+<span class="comment">%</span>
+<span class="comment">%  This loop does one 4th-order Runge-Kutta numerical integration step</span>
+<span class="comment">%  per iteration.  Integrate the state.  If partial derivatives are</span>
+<span class="comment">%  to be calculated, then the partial derivative matrices simultaneously</span>
+<span class="comment">%  with the state.</span>
+<span class="comment">%</span>
+
+   <span class="keyword">for</span> jj = 1:nRK
+      <span class="keyword">if</span> idervflag == 1
+         [fscript,dfscript_dx,dfscript_dvtil] = <span class="keyword">...</span>
+                   feval(fscriptname,t,x,uk,vk,1);
+         dFa = ( dfscript_dx * F )*delt;
+         dGammaa = ( dfscript_dx * Gamma + dfscript_dvtil )*delt;
+      <span class="keyword">else</span>
+         fscript = feval(fscriptname,t,x,uk,vk,0);
+      <span class="keyword">end</span>
+      dxa = fscript*delt;
+<span class="comment">%</span>
+      <span class="keyword">if</span> idervflag == 1
+         [fscript,dfscript_dx,dfscript_dvtil] = <span class="keyword">...</span>
+                   feval(fscriptname,(t + 0.5*delt),(x + 0.5*dxa),<span class="keyword">...</span>
+                         uk,vk,1);
+         dFb = ( dfscript_dx * ( F + 0.5 * dFa ) )*delt;
+         dGammab = ( dfscript_dx * ( Gamma + 0.5 * dGammaa ) + dfscript_dvtil )*delt;
+      <span class="keyword">else</span>
+         fscript = feval(fscriptname,(t + 0.5*delt),(x + 0.5*dxa),<span class="keyword">...</span>
+                         uk,vk,0);
+      <span class="keyword">end</span>
+      dxb = fscript*delt;
+<span class="comment">%</span>
+      <span class="keyword">if</span> idervflag == 1
+         [fscript,dfscript_dx,dfscript_dvtil] = <span class="keyword">...</span>
+                   feval(fscriptname,(t + 0.5*delt),(x + 0.5*dxb),<span class="keyword">...</span>
+                         uk,vk,1);
+         dFc = ( dfscript_dx * ( F + 0.5 * dFb ) )*delt;
+         dGammac = ( dfscript_dx * ( Gamma + 0.5 * dGammab ) + dfscript_dvtil )*delt;
+      <span class="keyword">else</span>
+         fscript = feval(fscriptname,(t + 0.5*delt),(x + 0.5*dxb),<span class="keyword">...</span>
+                         uk,vk,0);
+      <span class="keyword">end</span>
+      dxc = fscript*delt;
+<span class="comment">%</span>
+      <span class="keyword">if</span> idervflag == 1
+         [fscript,dfscript_dx,dfscript_dvtil] = <span class="keyword">...</span>
+                   feval(fscriptname,(t + delt),(x + dxc),<span class="keyword">...</span>
+                         uk,vk,1);
+         dFd = ( dfscript_dx * ( F + dFc ) )*delt;
+         dGammad = ( dfscript_dx * ( Gamma + dGammac ) + dfscript_dvtil )*delt;
+      <span class="keyword">else</span>
+         fscript = feval(fscriptname,(t + delt),(x + dxc),<span class="keyword">...</span>
+                         uk,vk,0);
+      <span class="keyword">end</span>
+      dxd = fscript*delt;
+<span class="comment">%</span>
+      x = x + (dxa + 2*(dxb + dxc) + dxd)*(1/6);
+      <span class="keyword">if</span> idervflag == 1
+         F = F + (dFa + 2*(dFb + dFc) + dFd)*(1/6);
+         Gamma = Gamma + <span class="keyword">...</span>
+                (dGammaa + 2*(dGammab + dGammac) + dGammad)*(1/6);
+      <span class="keyword">end</span>
+      t = t + delt;
+   <span class="keyword">end</span>
+<span class="comment">%</span>
+<span class="comment">%  Assign the results to the appropriate outputs.</span>
+<span class="comment">%</span>
+   fprinted = x;
+   <span class="keyword">if</span> idervflag == 1
+      dfprinted_dxk = F;
+      dfprinted_dvk = Gamma;
+   <span class="keyword">else</span>
+      dfprinted_dxk = [];
+      dfprinted_dvk = [];
+   <span class="keyword">end</span>
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [fprinted,dfprinted_dxk,dfprinted_dvk] = ...
+             c2dnonlinear(xk,uk,vk,tk,tkp1,nRK,fscriptname,idervflag)
+%
+%  Copyright (c) 2002 Mark L. Psiaki.  All rights reserved.  
+%
+% 
+%  This function derives a nonlinear discrete-time dynamics function
+%  for use in a nonlinear difference equation via 4th-order 
+%  Runge-Kutta numerical integration of a nonlinear differential
+%  equation.  If the nonlinear differential equation takes the
+%  form:
+%
+%               xdot = fscript{t,x(t),uk,vk}
+%
+%  and if the initial condition is x(tk) = xk, then the solution
+%  gets integrated forward from time tk to time tkp1 using nRK
+%  4th-order Runge-Kutta numerical integration steps in order to
+%  compute fprinted(k,xk,uk,vk) = x(tkp1).  This function can
+%  be used in a nonlinear dynamics model of the form:
+%
+%        xkp1 = fprinted(k,xk,uk,vk)
+%
+%  which is the form defined in MAE 676 lecture for use in a nonlinear
+%  extended Kalman filter.
+%
+%  This function also computes the first partial derivative of 
+%  fprinted(k,xk,uk,vk) with respect to xk, dfprinted_dxk, and with
+%  respect to vk, dfprinted_dvk.
+%
+%
+%  Inputs:
+%
+%    xk             The state vector at time tk, which is the initial 
+%                   time of the sample interval.
+%
+%    uk             The control vector, which is held constant
+%                   during the sample interval from time tk to time
+%                   tkp1.
+%
+%    vk             The discrete-time process noise disturbance vector, 
+%                   which is held constant during the sample interval 
+%                   from time tk to time tkp1.
+%
+%    tk             The start time of the numerical integration
+%                   sample interval.
+%
+%    tkp1           The end time of the numerical integration
+%                   sample interval.
+%
+%    nRK            The number of Runge-Kutta numerical integration
+%                   steps to take during the sample interval.
+%
+%    fscriptname    The name of the Matlab .m-file that contains the
+%                   function which defines fscript{t,x(t),uk,vk}.
+%                   This must be a character string.  For example, if 
+%                   the continuous-time differential equation model is 
+%                   contained in the file rocketmodel.m with the function 
+%                   name rocketmodel, then on input to the present 
+%                   function fscriptname must equal 'rocketmodel',
+%                   and the first line of the file rocketmodel.m
+%                   must be:
+%
+%                   function [fscript,dfscript_dx,dfscript_dvtil] = ...
+%                               rocketmodel(t,x,u,vtil,idervflag)
+%
+%                   The function must be written so that fscript
+%                   defines xdot as a function of t, x, u, and vtil
+%                   and so that dfscript_dx and dfscript_dvtil are the
+%                   matrix partial derivatives of fscript with respect 
+%                   to x and vtil if idervflag = 1.  If idervflag = 0, then 
+%                   these outputs must be empty arrays.
+%
+%    idervflag      A flag that tells whether (idervflag = 1) or not
+%                   (idervflag = 0) the partial derivatives 
+%                   dfprinted_dxk and dfprinted_dvk must be calculated.
+%                   If idervflag = 0, then these outputs will be
+%                   empty arrays.
+%  
+%  Outputs:
+%
+%    fprinted       The discrete-time dynamics vector function evaluated 
+%                   at k, xk, uk, and vk.
+%
+%    dfprinted_dxk  The partial derivative of fprinted with respect to
+%                   xk.  This is a Jacobian matrix.  It is evaluated and
+%                   output only if idervflag = 1.  Otherwise, an
+%                   empty array is output.
+%
+%    dfprinted_dvk  The partial derivative of fprinted with respect to
+%                   vk.  This is a Jacobian matrix.  It is evaluated and
+%                   output only if idervflag = 1.  Otherwise, an
+%                   empty array is output.
+%
+
+%
+%  Prepare for the Runge-Kutta numerical integration by setting up 
+%  the initial conditions and the time step.
+%
+   x = xk;
+   if idervflag == 1
+      nx = size(xk,1);
+      nv = size(vk,1);
+      F = eye(nx);
+      Gamma = zeros(nx,nv);
+   end
+   t = tk;
+   delt = (tkp1 - tk)/nRK;
+%
+%  This loop does one 4th-order Runge-Kutta numerical integration step
+%  per iteration.  Integrate the state.  If partial derivatives are
+%  to be calculated, then the partial derivative matrices simultaneously
+%  with the state.
+%
+   
+   for jj = 1:nRK
+      if idervflag == 1
+         [fscript,dfscript_dx,dfscript_dvtil] = ...
+                   feval(fscriptname,t,x,uk,vk,1);
+         dFa = ( dfscript_dx * F )*delt;
+         dGammaa = ( dfscript_dx * Gamma + dfscript_dvtil )*delt; 
+      else
+         fscript = feval(fscriptname,t,x,uk,vk,0);
+      end
+      dxa = fscript*delt;
+%
+      if idervflag == 1
+         [fscript,dfscript_dx,dfscript_dvtil] = ...
+                   feval(fscriptname,(t + 0.5*delt),(x + 0.5*dxa),...
+                         uk,vk,1);
+         dFb = ( dfscript_dx * ( F + 0.5 * dFa ) )*delt;
+         dGammab = ( dfscript_dx * ( Gamma + 0.5 * dGammaa ) + dfscript_dvtil )*delt; 
+      else
+         fscript = feval(fscriptname,(t + 0.5*delt),(x + 0.5*dxa),...
+                         uk,vk,0);
+      end
+      dxb = fscript*delt;
+%
+      if idervflag == 1
+         [fscript,dfscript_dx,dfscript_dvtil] = ...
+                   feval(fscriptname,(t + 0.5*delt),(x + 0.5*dxb),...
+                         uk,vk,1);
+         dFc = ( dfscript_dx * ( F + 0.5 * dFb ) )*delt;
+         dGammac = ( dfscript_dx * ( Gamma + 0.5 * dGammab ) + dfscript_dvtil )*delt; 
+      else
+         fscript = feval(fscriptname,(t + 0.5*delt),(x + 0.5*dxb),...
+                         uk,vk,0);
+      end
+      dxc = fscript*delt;
+%
+      if idervflag == 1
+         [fscript,dfscript_dx,dfscript_dvtil] = ...
+                   feval(fscriptname,(t + delt),(x + dxc),...
+                         uk,vk,1);
+         dFd = ( dfscript_dx * ( F + dFc ) )*delt;
+         dGammad = ( dfscript_dx * ( Gamma + dGammac ) + dfscript_dvtil )*delt; 
+      else
+         fscript = feval(fscriptname,(t + delt),(x + dxc),...
+                         uk,vk,0);
+      end
+      dxd = fscript*delt;
+%
+      x = x + (dxa + 2*(dxb + dxc) + dxd)*(1/6);
+      if idervflag == 1
+         F = F + (dFa + 2*(dFb + dFc) + dFd)*(1/6);
+         Gamma = Gamma + ...
+                (dGammaa + 2*(dGammab + dGammac) + dGammad)*(1/6);
+      end
+      t = t + delt;
+   end
+%
+%  Assign the results to the appropriate outputs.
+%
+   fprinted = x;
+   if idervflag == 1
+      dfprinted_dxk = F;
+      dfprinted_dvk = Gamma;
+   else
+      dfprinted_dxk = [];
+      dfprinted_dvk = [];
+   end
+##### SOURCE END #####
+--></body></html>
